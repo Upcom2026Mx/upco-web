@@ -1,0 +1,527 @@
+﻿<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Upco WEB — Panel del fundador</title>
+<meta name="robots" content="noindex, nofollow"/>
+<link rel="icon" href="../icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../estilos.css"/>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(180deg,#F8FAFC 0%,#F0F4F9 380px);color:#0a1c35;min-height:100vh}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="../shared.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef}=React;
+const SEGMENTO="escuelas"; // único segmento que este panel opera hoy — ver nota de shared.js
+
+const est={
+  input:{width:"100%",padding:"13px 15px",border:"1.5px solid #DDE4EE",borderRadius:10,fontSize:15,marginBottom:10,fontFamily:"inherit"},
+  card:{background:"#fff",borderRadius:16,padding:22,border:"1px solid rgba(16,40,74,.08)",boxShadow:"0 3px 12px rgba(16,28,53,.07), 0 1px 3px rgba(16,28,53,.05)"},
+  fila:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid #f1f5f9"},
+  linkBtn:{background:"none",border:"none",color:"#53647D",fontSize:13,cursor:"pointer",padding:"4px 8px"},
+  badge:(color)=>({display:"inline-block",fontSize:11,fontWeight:700,color,background:color+"1a",borderRadius:7,padding:"3px 9px"})
+};
+
+const VARIANTE_BOTON={"#10284A":"btn-navy","#F59E0B":"btn-amber","#53647D":"btn-neutral","#16a34a":"btn-good"};
+function Boton({children,onClick,disabled,color="#10284A",type="button"}){
+  return <button type={type} onClick={onClick} disabled={disabled} className={`btn ${VARIANTE_BOTON[color]||"btn-navy"}`}>
+    {children}
+  </button>;
+}
+
+// Botón "ver/ocultar" para campos de contraseña — se coloca dentro de un contenedor
+// position:relative junto al <input>, con paddingRight en el input para no taparlo.
+function BotonVerClave({mostrar,onClick}){
+  return <button type="button" onClick={onClick} aria-label={mostrar?"Ocultar contraseña":"Mostrar contraseña"} tabIndex={-1}
+    style={{position:"absolute",right:2,top:0,bottom:0,width:38,background:"none",border:"none",cursor:"pointer",color:"#8FA0B4",display:"flex",alignItems:"center",justifyContent:"center"}}>
+    {mostrar
+      ? <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.77 21.77 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      : <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>}
+  </button>;
+}
+
+const tabStyle=(activo)=>({background:"none",border:"none",padding:"10px 2px",fontSize:14,
+  fontWeight:activo?700:500,color:activo?"#10284A":"#8FA0B4",cursor:"pointer",
+  borderBottom:activo?"2px solid #10284A":"2px solid transparent",marginBottom:-1});
+
+const ALTO_HEADER=54;
+function HeaderBar(){
+  return <div style={{background:"linear-gradient(135deg,#173863,#0a1c35)",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,height:ALTO_HEADER,boxShadow:"0 2px 14px rgba(10,28,53,.25)"}}>
+    <a href="../" style={{color:"#fff",fontWeight:700,fontSize:18,fontFamily:"var(--font-display)",display:"inline-flex",alignItems:"center",gap:8,textDecoration:"none"}}><span className="brand-logo"></span> <span style={{color:"#F59E0B"}}>WEB</span></a>
+    <span style={{color:"#fff",fontSize:12,fontWeight:600,background:"rgba(255,255,255,.15)",borderRadius:20,padding:"3px 10px"}}>Portal del Fundador</span>
+  </div>;
+}
+
+function Login(){
+  const[email,setEmail]=useState("");
+  const[password,setPassword]=useState("");
+  const[mostrarClave,setMostrarClave]=useState(false);
+  const[error,setError]=useState("");
+  const[cargando,setCargando]=useState(false);
+
+  const entrar=async(e)=>{
+    e.preventDefault();
+    if(!email||!email.includes("@")){setError("Escribe un correo válido.");return;}
+    if(!password){setError("Escribe tu contraseña.");return;}
+    setError("");setCargando(true);
+    const{error}=await sb.auth.signInWithPassword({email:email.trim(),password});
+    setCargando(false);
+    if(error){setError(`Correo o contraseña incorrectos. (${error.message||"sin detalle"})`);return;}
+  };
+
+  return <div style={{minHeight:`calc(100vh - ${ALTO_HEADER}px)`,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <form onSubmit={entrar} style={{background:"#fff",borderRadius:16,padding:28,width:"100%",maxWidth:380,boxShadow:"0 8px 30px rgba(0,0,0,.08)"}}>
+      <div style={{fontSize:18,fontWeight:800,marginBottom:6,color:"#10284A"}}>Iniciar sesión</div>
+      <div style={{fontSize:12.5,color:"#8FA0B4",marginBottom:18}}>Misma cuenta con la que entras al admin de InsurGest.</div>
+      <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu correo" type="email" autoComplete="username" style={est.input}/>
+      <div style={{position:"relative"}}>
+        <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="tu contraseña" type={mostrarClave?"text":"password"} autoComplete="current-password" style={{...est.input,paddingRight:42,marginBottom:12}}/>
+        <BotonVerClave mostrar={mostrarClave} onClick={()=>setMostrarClave(m=>!m)}/>
+      </div>
+      {error&&<div style={{color:"#dc2626",fontSize:13,marginBottom:10}}>{error}</div>}
+      <div style={{width:"100%"}}><Boton type="submit" disabled={cargando}>{cargando?"Entrando...":"Iniciar sesión"}</Boton></div>
+    </form>
+  </div>;
+}
+
+function TarjetaCifra({valor,etiqueta,color,onClick,activa}){
+  const[hover,setHover]=useState(false);
+  const base={flex:"1 1 130px",background:"#fff",borderRadius:12,padding:"14px 16px",
+    border:"1px solid "+(activa?"#F59E0B":"rgba(16,40,74,.08)"),
+    boxShadow:activa?"0 0 0 2px rgba(245,158,11,.18)":(hover&&onClick?"0 4px 14px rgba(16,40,74,.10)":"none"),
+    transition:"box-shadow .14s ease, border-color .14s ease, transform .14s ease",
+    transform:hover&&onClick?"translateY(-1px)":"none"};
+  if(!onClick) return <div style={base}>
+    <div style={{fontSize:26,fontWeight:700,color:color||"#10284A",fontVariantNumeric:"tabular-nums",lineHeight:1.1}}>{valor}</div>
+    <div style={{fontSize:12,color:"#6B7280",marginTop:4,lineHeight:1.35}}>{etiqueta}</div>
+  </div>;
+  return <button type="button" onClick={onClick}
+    onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+    title="Ver esta lista abajo"
+    style={{...base,textAlign:"left",cursor:"pointer",font:"inherit"}}>
+    <div style={{fontSize:26,fontWeight:700,color:color||"#10284A",fontVariantNumeric:"tabular-nums",lineHeight:1.1}}>{valor}</div>
+    <div style={{fontSize:12,color:"#6B7280",marginTop:4,lineHeight:1.35}}>{etiqueta}</div>
+    <div style={{fontSize:11,color:activa?"#B45309":"#A9B4C4",marginTop:6,fontWeight:activa?700:400}}>
+      {activa?"● mostrando abajo":"ver lista →"}
+    </div>
+  </button>;
+}
+
+// Barra horizontal de un solo tono — desglose por estado o por nivel educativo. Mismo criterio
+// que el dashboard de InsurGest: barras finas, etiqueta de valor directa, sin leyenda porque es
+// una sola serie.
+function ListaBarras({titulo,filas}){
+  if(!filas||filas.length===0)return null;
+  const max=Math.max(...filas.map(f=>f.total),1);
+  return <div style={{...est.card,marginBottom:20}}>
+    <div style={{fontSize:13,fontWeight:700,marginBottom:14,color:"#10284A"}}>{titulo}</div>
+    {filas.map((f,i)=><div key={i} style={{marginBottom:i===filas.length-1?0:10}}>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:"#374151",marginBottom:4}}>
+        <span>{f.estado||f.nivel}</span><span style={{fontWeight:700,color:"#10284A"}}>{f.total}</span>
+      </div>
+      <div style={{height:8,background:"#F0F4F9",borderRadius:4,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${Math.max(4,(f.total/max)*100)}%`,background:"#10284A",borderRadius:4}}/>
+      </div>
+    </div>)}
+  </div>;
+}
+
+const ALIAS_PROSPECTO={
+  agencia:["agencia","nombre","denominacion","denominación","escuela","empresa","razon social"],
+  correo:["correo","email","e-mail","correo electronico","correo electrónico"],
+  estado:["estado","entidad","entidad federativa"],
+  cp:["cp","codigo postal","código postal","c.p."],
+  ciudad:["ciudad","municipio","poblacion","población"],
+  nivel_educativo:["nivel_educativo","nivel","nivel educativo"],
+  tiene_sitio_web:["tiene_sitio_web","tiene sitio web"],
+  sitio_web_actual:["sitio_web_actual","sitio_internet","sitio web"]
+};
+function mapearColumnasProspecto(encabezados){
+  const norm=s=>(s||"").toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const mapa={};
+  for(const campo in ALIAS_PROSPECTO){
+    const alias=ALIAS_PROSPECTO[campo].map(norm);
+    const hallado=encabezados.find(h=>alias.includes(norm(h)));
+    if(hallado)mapa[campo]=hallado;
+  }
+  return mapa;
+}
+
+function ImportarProspectos({onListo}){
+  const[filas,setFilas]=useState(null);
+  const[error,setError]=useState("");
+  const[importando,setImportando]=useState(false);
+  const[resultado,setResultado]=useState(null);
+
+  const elegirArchivo=(file)=>{
+    setError("");setFilas(null);setResultado(null);
+    if(!file)return;
+    Papa.parse(file,{
+      header:true,skipEmptyLines:true,
+      complete:(res)=>{
+        if(!res.data.length){setError("El archivo no tiene filas.");return;}
+        const m=mapearColumnasProspecto(res.meta.fields||[]);
+        if(!m.agencia||!m.correo){
+          setError('No encontramos las columnas de "nombre/escuela" y "correo" en el archivo. Revisa los encabezados.');
+          return;
+        }
+        setFilas(res.data.map(f=>({
+          agencia:(f[m.agencia]||"").trim(),
+          correo:(f[m.correo]||"").trim(),
+          estado:m.estado?(f[m.estado]||"").trim():null,
+          cp:m.cp?(f[m.cp]||"").trim():null,
+          ciudad:m.ciudad?(f[m.ciudad]||"").trim():null,
+          nivel_educativo:m.nivel_educativo?(f[m.nivel_educativo]||"").trim().toLowerCase():null,
+          tiene_sitio_web:m.tiene_sitio_web?/^(1|true|si|sí|verdadero)$/i.test((f[m.tiene_sitio_web]||"").trim()):
+            (m.sitio_web_actual?!!(f[m.sitio_web_actual]||"").trim():null),
+          sitio_web_actual:m.sitio_web_actual?(f[m.sitio_web_actual]||"").trim():null
+        })).filter(f=>f.agencia&&f.correo));
+      },
+      error:(err)=>setError("No se pudo leer el archivo: "+err.message)
+    });
+  };
+
+  const importar=async()=>{
+    setImportando(true);setError("");
+    let acum={insertados:0,omitidos:0,invalidos:0};
+    for(let i=0;i<filas.length;i+=500){
+      const{data,error}=await sb.rpc("admin_importar_prospectos",{p_filas:filas.slice(i,i+500),p_segmento:SEGMENTO});
+      if(error){setImportando(false);setError(error.message);return;}
+      acum={insertados:acum.insertados+data.insertados,omitidos:acum.omitidos+data.omitidos,invalidos:acum.invalidos+data.invalidos};
+    }
+    setImportando(false);setResultado(acum);setFilas(null);
+    onListo&&onListo();
+  };
+
+  return <div style={{...est.card,marginBottom:20}}>
+    <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Importar lista de escuelas</div>
+    <div style={{fontSize:13,color:"#6B7280",marginBottom:14}}>
+      El CSV necesita al menos <b>nombre</b> y <b>correo</b>. Si trae <b>estado</b>, <b>nivel_educativo</b> y
+      <b> sitio_web_actual</b> (vacío si no tiene), el panel puede filtrar por zona, nivel y quién no tiene sitio —
+      exactamente las columnas que produce el script de importación del DENUE. Volver a importar el mismo
+      archivo no duplica ni reinicia a nadie que ya vaya a media secuencia.
+    </div>
+    <input type="file" accept=".csv,text/csv" onChange={e=>elegirArchivo(e.target.files[0])} style={{fontSize:14,marginBottom:12}}/>
+    {error&&<div style={{color:"#dc2626",fontSize:13,marginBottom:10}}>{error}</div>}
+    {filas&&<div style={{marginBottom:10}}>
+      <div style={{fontSize:13,marginBottom:10}}>Se van a importar <b>{filas.length}</b> escuelas.</div>
+      <Boton onClick={importar} disabled={importando}>{importando?"Importando...":"Confirmar importación"}</Boton>
+    </div>}
+    {resultado&&<div style={{color:"#16a34a",fontSize:13}}>
+      Listo: {resultado.insertados} nuevas, {resultado.omitidos} ya estaban, {resultado.invalidos} sin correo válido.
+    </div>}
+  </div>;
+}
+
+function AjustesProspeccion({ajustes,onGuardado}){
+  const[f,setF]=useState(ajustes);
+  const[guardando,setGuardando]=useState(false);
+  const[msg,setMsg]=useState("");
+  const[error,setError]=useState("");
+  useEffect(()=>{setF(ajustes)},[ajustes]);
+
+  const guardar=async(cambios)=>{
+    const nuevo={...f,...cambios};
+    setF(nuevo);setGuardando(true);setError("");setMsg("");
+    const{error}=await sb.rpc("admin_guardar_ajustes_prospeccion",{
+      p_segmento:SEGMENTO,
+      p_activa:nuevo.activa,
+      p_envios_por_dia:Number(nuevo.envios_por_dia),
+      p_corridas_por_dia:Number(nuevo.corridas_por_dia),
+      p_dias_a_seguimiento:Number(nuevo.dias_a_seguimiento),
+      p_dias_a_cierre:Number(nuevo.dias_a_cierre),
+      p_remitente:nuevo.remitente,
+      p_responder_a:nuevo.responder_a,
+      p_pie_legal:nuevo.pie_legal
+    });
+    setGuardando(false);
+    if(error){setError(error.message);return;}
+    setMsg("Guardado.");onGuardado&&onGuardado();
+    setTimeout(()=>setMsg(""),2500);
+  };
+
+  if(!f)return null;
+  return <div style={{...est.card,marginBottom:20}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:14}}>
+      <div>
+        <div style={{fontSize:15,fontWeight:700}}>{f.activa?"Campaña activa":"Campaña pausada"}</div>
+        <div style={{fontSize:12.5,color:"#6B7280",marginTop:2}}>
+          {f.activa?"El sistema manda solo, cada hora entre 9am y 6pm.":"No se manda ningún correo hasta que la actives."}
+        </div>
+      </div>
+      <Boton color={f.activa?"#53647D":"#16a34a"} onClick={()=>guardar({activa:!f.activa})} disabled={guardando}>
+        {f.activa?"Pausar campaña":"Activar campaña"}
+      </Boton>
+    </div>
+
+    <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+      <label style={{flex:"1 1 150px",fontSize:12.5,color:"#6B7280"}}>
+        Correos por día
+        <input type="number" min="1" max="500" value={f.envios_por_dia}
+          onChange={e=>setF({...f,envios_por_dia:e.target.value})}
+          onBlur={e=>guardar({envios_por_dia:e.target.value})} style={{...est.input,marginTop:5,marginBottom:0}}/>
+      </label>
+      <label style={{flex:"1 1 150px",fontSize:12.5,color:"#6B7280"}}>
+        Días al 2º correo
+        <input type="number" min="1" max="30" value={f.dias_a_seguimiento}
+          onChange={e=>setF({...f,dias_a_seguimiento:e.target.value})}
+          onBlur={e=>guardar({dias_a_seguimiento:e.target.value})} style={{...est.input,marginTop:5,marginBottom:0}}/>
+      </label>
+      <label style={{flex:"1 1 150px",fontSize:12.5,color:"#6B7280"}}>
+        Días al 3º correo
+        <input type="number" min="1" max="30" value={f.dias_a_cierre}
+          onChange={e=>setF({...f,dias_a_cierre:e.target.value})}
+          onBlur={e=>guardar({dias_a_cierre:e.target.value})} style={{...est.input,marginTop:5,marginBottom:0}}/>
+      </label>
+    </div>
+    <div style={{fontSize:12,color:"#8FA0B4",marginTop:10,lineHeight:1.5}}>
+      Remitente: <b>{f.remitente}</b> · las respuestas llegan a <b>{f.responder_a}</b>. Mismo dominio ya
+      calentado por la campaña de agencias de seguros — el cupo diario aquí es independiente del de esa campaña.
+    </div>
+
+    <label style={{display:"block",fontSize:12.5,color:"#6B7280",marginTop:14}}>
+      Pie legal — se agrega al final de los tres correos
+      <textarea value={f.pie_legal||""} onChange={e=>setF({...f,pie_legal:e.target.value})}
+        onBlur={e=>guardar({pie_legal:e.target.value})} rows={3}
+        style={{...est.input,marginTop:5,marginBottom:0,fontFamily:"ui-monospace,Consolas,monospace",fontSize:12.5,lineHeight:1.55}}/>
+    </label>
+    {error&&<div style={{color:"#dc2626",fontSize:13,marginTop:10}}>{error}</div>}
+    {msg&&<div style={{color:"#16a34a",fontSize:13,marginTop:10}}>{msg}</div>}
+  </div>;
+}
+
+function PlantillasProspeccion(){
+  const[filas,setFilas]=useState(null);
+  const[error,setError]=useState("");
+  const[msg,setMsg]=useState("");
+
+  const cargar=async()=>{
+    const{data,error}=await sb.rpc("admin_plantillas_prospeccion",{p_segmento:SEGMENTO});
+    if(error){setError(error.message);return;}
+    setFilas(data||[]);
+  };
+  useEffect(()=>{cargar()},[]);
+
+  const guardar=async(p)=>{
+    setError("");setMsg("");
+    const{error}=await sb.rpc("admin_guardar_plantilla",{p_ruta:p.ruta,p_etapa:p.etapa,p_asunto:p.asunto,p_cuerpo_html:p.cuerpo_html,p_segmento:SEGMENTO});
+    if(error){setError(error.message);return;}
+    setMsg("Plantilla guardada.");setTimeout(()=>setMsg(""),2500);
+  };
+
+  if(!filas)return <div style={{color:"#6B7280",fontSize:14}}>Cargando...</div>;
+  return <div>
+    <div style={{fontSize:13,color:"#6B7280",marginBottom:16,lineHeight:1.55}}>
+      Se escribe en HTML simple: <code>&lt;p&gt;</code> para cada párrafo y <code>&lt;a href="..."&gt;</code> para las ligas.
+      Donde escribas <code>{"{NOMBRE}"}</code> se sustituye el nombre real de la escuela. El pie legal se agrega
+      solo al final de los tres, no hay que ponerlo aquí.
+    </div>
+    {error&&<div style={{color:"#dc2626",fontSize:13,marginBottom:10}}>{error}</div>}
+    {msg&&<div style={{color:"#16a34a",fontSize:13,marginBottom:10}}>{msg}</div>}
+    {filas.map((p,i)=><div key={p.ruta+p.etapa} style={{...est.card,marginBottom:14}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#8FA0B4",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>
+        Correo {p.etapa} de 3
+      </div>
+      <input value={p.asunto} onChange={e=>{const c=[...filas];c[i]={...p,asunto:e.target.value};setFilas(c);}} style={est.input}/>
+      <textarea value={p.cuerpo_html} onChange={e=>{const c=[...filas];c[i]={...p,cuerpo_html:e.target.value};setFilas(c);}}
+        rows={10} style={{...est.input,fontFamily:"ui-monospace,Consolas,monospace",fontSize:13,lineHeight:1.55}}/>
+      <Boton onClick={()=>guardar(filas[i])}>Guardar este correo</Boton>
+    </div>)}
+  </div>;
+}
+
+const COLOR_ESTATUS_PROSPECTO={activo:"#1f4a80",respondio:"#16a34a",baja:"#6b7280",rebotado:"#dc2626",queja:"#dc2626",completado:"#8593AA"};
+const ETIQUETA_ESTATUS_PROSPECTO={activo:"En secuencia",respondio:"Respondió",baja:"Baja",rebotado:"Rebotó",queja:"Marcó spam",completado:"Secuencia completa"};
+
+function Prospectos(){
+  const[resumen,setResumen]=useState(null);
+  const[lista,setLista]=useState(null);
+  const[filtro,setFiltro]=useState({e:"",v:""});
+  const[busqueda,setBusqueda]=useState("");
+  const[subvista,setSubvista]=useState("panel");
+  const[error,setError]=useState("");
+  const[disparando,setDisparando]=useState(false);
+  const[avisoLote,setAvisoLote]=useState("");
+  const refLista=useRef(null);
+
+  const cargar=async()=>{
+    const args={p_estatus:filtro.e||null,p_ruta:null,p_busqueda:busqueda||null,p_limite:300,p_segmento:SEGMENTO};
+    if(filtro.v) args.p_vista=filtro.v;
+    const[r1,r2]=await Promise.all([
+      sb.rpc("admin_prospeccion_resumen",{p_segmento:SEGMENTO}),
+      sb.rpc("admin_prospectos",args)
+    ]);
+    if(r1.error){setError(r1.error.message);return;}
+    if(r2.error){setError(r2.error.message);return;}
+    setError("");setResumen(r1.data);setLista(r2.data||[]);
+  };
+  useEffect(()=>{cargar()},[filtro.e,filtro.v,busqueda]);
+
+  const verFiltro=(e,v)=>{
+    const igual=filtro.e===(e||"")&&filtro.v===(v||"");
+    setFiltro(igual?{e:"",v:""}:{e:e||"",v:v||""});
+    setTimeout(()=>{if(refLista.current)refLista.current.scrollIntoView({behavior:"smooth",block:"start"})},120);
+  };
+  const activa=(e,v)=>filtro.e===(e||"")&&filtro.v===(v||"");
+
+  const marcar=async(id,estatus)=>{
+    const{error}=await sb.rpc("admin_marcar_prospecto",{p_id:id,p_estatus:estatus,p_notas:null});
+    if(error){setError(error.message);return;}
+    cargar();
+  };
+
+  const dispararAhora=async()=>{
+    setDisparando(true);setAvisoLote("");
+    const{data,error}=await sb.rpc("admin_disparar_lote");
+    setDisparando(false);
+    if(error){setError(error.message);return;}
+    const propio=(data.detalle||[]).find(d=>d.segmento===SEGMENTO);
+    setAvisoLote(propio?`Se mandaron ${propio.enviados} correos de escuelas.`:(data.motivo?`No se mandó nada: ${data.motivo}.`:"No había nada que mandar para este segmento en este momento."));
+    cargar();
+  };
+
+  if(error)return <div style={{color:"#dc2626",fontSize:14}}>{error}</div>;
+  if(!resumen)return <div style={{color:"#6B7280",fontSize:14}}>Cargando...</div>;
+
+  const enviados=resumen.correos_enviados||0;
+  const pct=(n)=>enviados?Math.round((n/enviados)*100)+"%":"—";
+
+  return <div>
+    <div style={{display:"flex",gap:16,marginBottom:20,borderBottom:"1px solid #DDE4EE"}}>
+      <button onClick={()=>setSubvista("panel")} style={tabStyle(subvista==="panel")}>Campaña</button>
+      <button onClick={()=>setSubvista("plantillas")} style={tabStyle(subvista==="plantillas")}>Los 3 correos</button>
+    </div>
+
+    {subvista==="plantillas"?<PlantillasProspeccion/>:<div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
+        <TarjetaCifra valor={resumen.total} etiqueta="Escuelas en la lista"
+          onClick={()=>verFiltro("","")} activa={activa("","")}/>
+        <TarjetaCifra valor={resumen.sin_contactar} etiqueta="Sin contactar"
+          onClick={()=>verFiltro("","sin_contactar")} activa={activa("","sin_contactar")}/>
+        <TarjetaCifra valor={resumen.sin_sitio_web} etiqueta="Sin sitio web (DENUE)" color="#B45309"
+          onClick={()=>verFiltro("","sin_sitio_web")} activa={activa("","sin_sitio_web")}/>
+        <TarjetaCifra valor={resumen.respondieron} etiqueta="Respondieron" color="#16a34a"
+          onClick={()=>verFiltro("respondio","")} activa={activa("respondio","")}/>
+      </div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
+        <TarjetaCifra valor={enviados} etiqueta={`Correos enviados · ${resumen.enviados_hoy} hoy`}
+          onClick={()=>verFiltro("","contactados")} activa={activa("","contactados")}/>
+        <TarjetaCifra valor={pct(resumen.abrieron)} etiqueta={`Abrieron (${resumen.abrieron} escuelas)`} color="#1f4a80"/>
+        <TarjetaCifra valor={pct(resumen.clicaron)} etiqueta={`Vieron el sitio demo (${resumen.clicaron} escuelas)`} color="#F59E0B"/>
+        <TarjetaCifra valor={resumen.rebotados+resumen.quejas} etiqueta="Rebotes y quejas de spam"
+          color={(resumen.rebotados+resumen.quejas)>0?"#dc2626":"#8593AA"}
+          onClick={()=>verFiltro("","problema")} activa={activa("","problema")}/>
+      </div>
+
+      <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+        <div style={{flex:"1 1 260px"}}><ListaBarras titulo="Por estado" filas={resumen.por_estado}/></div>
+        <div style={{flex:"1 1 260px"}}><ListaBarras titulo="Por nivel educativo" filas={(resumen.por_nivel||[]).map(f=>({...f,nivel:NIVELES_EDUCATIVOS[f.nivel]||f.nivel}))}/></div>
+      </div>
+
+      <AjustesProspeccion ajustes={resumen.ajustes} onGuardado={cargar}/>
+      <ImportarProspectos onListo={cargar}/>
+
+      <div style={{...est.card,marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <div style={{fontSize:13,color:"#6B7280",flex:"1 1 220px"}}>
+          Manda el lote de esta hora sin esperar al reloj. Respeta el tope del día.
+        </div>
+        <Boton color="#53647D" onClick={dispararAhora} disabled={disparando}>{disparando?"Mandando...":"Mandar lote ahora"}</Boton>
+      </div>
+      {avisoLote&&<div style={{fontSize:13,color:"#1f4a80",marginBottom:16}}>{avisoLote}</div>}
+
+      <div ref={refLista} style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+        {[["","Todos"],["activo","En secuencia"],["respondio","Respondieron"],["completado","Completos"],
+          ["baja","Bajas"],["rebotado","Rebotes"],["queja","Marcaron spam"]]
+          .map(([v,t])=><button key={v} onClick={()=>setFiltro({e:v,v:""})}
+            style={{...est.linkBtn,fontWeight:activa(v,"")?700:400,color:activa(v,"")?"#10284A":"#53647D"}}>{t}</button>)}
+      </div>
+      <input placeholder="Buscar por escuela, correo o estado" value={busqueda}
+        onChange={e=>setBusqueda(e.target.value)} style={est.input}/>
+
+      {lista&&lista.length===0&&<div style={{...est.card,textAlign:"center",color:"#6B7280"}}>
+        No hay escuelas con ese filtro. Importa el CSV para empezar.
+      </div>}
+      {lista&&lista.length>0&&<div style={{...est.card,padding:0,overflow:"hidden"}}>
+        {lista.map(p=><div key={p.id} style={{...est.fila,alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
+          <div style={{flex:"1 1 240px",minWidth:0}}>
+            <div style={{fontWeight:700,fontSize:14,wordBreak:"break-word"}}>{p.agencia}</div>
+            <div style={{fontSize:12,color:"#8FA0B4",marginTop:2,wordBreak:"break-all"}}>{p.correo}</div>
+            <div style={{marginTop:6,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+              <span style={est.badge(COLOR_ESTATUS_PROSPECTO[p.estatus]||"#8593AA")}>{ETIQUETA_ESTATUS_PROSPECTO[p.estatus]||p.estatus}</span>
+              <span style={{fontSize:11.5,color:"#8FA0B4"}}>
+                correo {p.etapa} de 3{p.estado?` · ${p.estado}`:""}{p.nivel_educativo?` · ${NIVELES_EDUCATIVOS[p.nivel_educativo]||p.nivel_educativo}`:""}
+              </span>
+              {p.tiene_sitio_web===false&&<span style={{fontSize:11.5,color:"#B45309",fontWeight:600}}>sin sitio web</span>}
+              {p.aperturas>0&&<span style={{fontSize:11.5,color:"#1f4a80",fontWeight:600}}>abrió</span>}
+              {p.clics>0&&<span style={{fontSize:11.5,color:"#B45309",fontWeight:600}}>vio el demo</span>}
+            </div>
+          </div>
+          {(p.estatus==="activo"||p.estatus==="completado")&&<div style={{display:"flex",gap:4,flexShrink:0}}>
+            <button onClick={()=>marcar(p.id,"respondio")} style={{...est.linkBtn,color:"#16a34a",fontWeight:600}}>Respondió</button>
+            <button onClick={()=>marcar(p.id,"baja")} style={{...est.linkBtn,color:"#dc2626"}}>Baja</button>
+          </div>}
+        </div>)}
+      </div>}
+      {lista&&lista.length>=300&&<div style={{fontSize:12,color:"#8FA0B4",marginTop:10}}>
+        Se muestran las primeras 300. Usa el buscador o los filtros para acotar.
+      </div>}
+    </div>}
+  </div>;
+}
+
+function PanelAdmin({session,onSalir}){
+  const[noAutorizado,setNoAutorizado]=useState(false);
+  useEffect(()=>{
+    sb.rpc("es_admin").then(({data,error})=>{
+      if(error||!data)setNoAutorizado(true);
+    });
+  },[]);
+
+  if(noAutorizado)return <div style={{padding:40,textAlign:"center",color:"#dc2626"}}>
+    Esta cuenta no tiene permiso para ver el panel de administración.
+    <div style={{marginTop:16}}><button onClick={onSalir} style={est.linkBtn}>Salir</button></div>
+  </div>;
+
+  return <div style={{maxWidth:760,margin:"0 auto",padding:"24px 16px 60px"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+      <div style={{fontSize:16,fontWeight:700,color:"#10284A"}}>Hola, fundador</div>
+      <button onClick={onSalir} style={{background:"none",border:"none",color:"#6B7280",fontSize:14,cursor:"pointer"}}>Salir ({session.user.email})</button>
+    </div>
+    <div style={{fontSize:13,color:"#8FA0B4",marginBottom:24}}>Prospección · segmento escuelas</div>
+    <Prospectos/>
+  </div>;
+}
+
+function App(){
+  const[sesion,setSesion]=useState(undefined);
+  useEffect(()=>{
+    sb.auth.getSession().then(({data})=>setSesion(data.session||null));
+    const{data:sub}=sb.auth.onAuthStateChange((_e,s)=>setSesion(s));
+    return ()=>sub.subscription.unsubscribe();
+  },[]);
+  return <>
+    <HeaderBar/>
+    {sesion===undefined
+      ?<div style={{padding:40,textAlign:"center",color:"#6B7280"}}>Cargando...</div>
+      :!sesion
+        ?<Login/>
+        :<PanelAdmin session={sesion} onSalir={()=>sb.auth.signOut()}/>}
+  </>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
