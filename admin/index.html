@@ -200,11 +200,11 @@ function ImportarProspectos({segmento,onListo}){
 
   const importar=async()=>{
     setImportando(true);setError("");
-    let acum={insertados:0,omitidos:0,invalidos:0};
+    let acum={insertados:0,omitidos:0,invalidos:0,institucionales:0};
     for(let i=0;i<filas.length;i+=500){
       const{data,error}=await sb.rpc("admin_importar_prospectos",{p_filas:filas.slice(i,i+500),p_segmento:segmento});
       if(error){setImportando(false);setError(error.message);return;}
-      acum={insertados:acum.insertados+data.insertados,omitidos:acum.omitidos+data.omitidos,invalidos:acum.invalidos+data.invalidos};
+      acum={insertados:acum.insertados+data.insertados,omitidos:acum.omitidos+data.omitidos,invalidos:acum.invalidos+data.invalidos,institucionales:acum.institucionales+(data.institucionales||0)};
     }
     setImportando(false);setResultado(acum);setFilas(null);
     onListo&&onListo();
@@ -225,7 +225,8 @@ function ImportarProspectos({segmento,onListo}){
       <Boton onClick={importar} disabled={importando}>{importando?"Importando...":"Confirmar importación"}</Boton>
     </div>}
     {resultado&&<div style={{color:"#16a34a",fontSize:13}}>
-      Listo: {resultado.insertados} nuevas, {resultado.omitidos} ya estaban, {resultado.invalidos} sin correo válido.
+      Listo: {resultado.insertados} nuevas, {resultado.omitidos} ya estaban, {resultado.invalidos} sin correo válido
+      {resultado.institucionales>0?`, ${resultado.institucionales} con dominio institucional (.edu.mx/.gob.mx, descartadas)`:""}.
     </div>}
   </div>;
 }
