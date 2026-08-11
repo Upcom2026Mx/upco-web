@@ -25,7 +25,8 @@
 <div id="root"></div>
 <script type="text/babel">
 const{useState,useEffect,useRef}=React;
-const SEGMENTO="escuelas"; // único segmento que este panel opera hoy — ver nota de shared.js
+// La lista de segmentos que este panel sabe operar vive en shared.js (SEGMENTOS_ADMIN),
+// para no repetir el mismo objeto en cada archivo que algún día toque más de un segmento.
 
 const est={
   input:{width:"100%",padding:"13px 15px",border:"1.5px solid #DDE4EE",borderRadius:10,fontSize:15,marginBottom:10,fontFamily:"inherit"},
@@ -146,6 +147,7 @@ const ALIAS_PROSPECTO={
   cp:["cp","codigo postal","código postal","c.p."],
   ciudad:["ciudad","municipio","poblacion","población"],
   nivel_educativo:["nivel_educativo","nivel","nivel educativo"],
+  categoria:["categoria","categoría"],
   tiene_sitio_web:["tiene_sitio_web","tiene sitio web"],
   sitio_web_actual:["sitio_web_actual","sitio_internet","sitio web"]
 };
@@ -160,7 +162,8 @@ function mapearColumnasProspecto(encabezados){
   return mapa;
 }
 
-function ImportarProspectos({onListo}){
+function ImportarProspectos({segmento,onListo}){
+  const cfg=SEGMENTOS_ADMIN[segmento];
   const[filas,setFilas]=useState(null);
   const[error,setError]=useState("");
   const[importando,setImportando]=useState(false);
@@ -185,6 +188,7 @@ function ImportarProspectos({onListo}){
           cp:m.cp?(f[m.cp]||"").trim():null,
           ciudad:m.ciudad?(f[m.ciudad]||"").trim():null,
           nivel_educativo:m.nivel_educativo?(f[m.nivel_educativo]||"").trim().toLowerCase():null,
+          categoria:m.categoria?(f[m.categoria]||"").trim().toLowerCase():null,
           tiene_sitio_web:m.tiene_sitio_web?/^(1|true|si|sí|verdadero)$/i.test((f[m.tiene_sitio_web]||"").trim()):
             (m.sitio_web_actual?!!(f[m.sitio_web_actual]||"").trim():null),
           sitio_web_actual:m.sitio_web_actual?(f[m.sitio_web_actual]||"").trim():null
@@ -198,7 +202,7 @@ function ImportarProspectos({onListo}){
     setImportando(true);setError("");
     let acum={insertados:0,omitidos:0,invalidos:0};
     for(let i=0;i<filas.length;i+=500){
-      const{data,error}=await sb.rpc("admin_importar_prospectos",{p_filas:filas.slice(i,i+500),p_segmento:SEGMENTO});
+      const{data,error}=await sb.rpc("admin_importar_prospectos",{p_filas:filas.slice(i,i+500),p_segmento:segmento});
       if(error){setImportando(false);setError(error.message);return;}
       acum={insertados:acum.insertados+data.insertados,omitidos:acum.omitidos+data.omitidos,invalidos:acum.invalidos+data.invalidos};
     }
@@ -207,17 +211,17 @@ function ImportarProspectos({onListo}){
   };
 
   return <div style={{...est.card,marginBottom:20}}>
-    <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Importar lista de escuelas</div>
+    <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Importar lista de {cfg.etiqueta.toLowerCase()}</div>
     <div style={{fontSize:13,color:"#6B7280",marginBottom:14}}>
-      El CSV necesita al menos <b>nombre</b> y <b>correo</b>. Si trae <b>estado</b>, <b>nivel_educativo</b> y
-      <b> sitio_web_actual</b> (vacío si no tiene), el panel puede filtrar por zona, nivel y quién no tiene sitio —
+      El CSV necesita al menos <b>nombre</b> y <b>correo</b>. Si trae <b>estado</b>, <b>{cfg.campoExtra}</b> y
+      <b> sitio_web_actual</b> (vacío si no tiene), el panel puede filtrar por zona, categoría y quién no tiene sitio —
       exactamente las columnas que produce el script de importación del DENUE. Volver a importar el mismo
       archivo no duplica ni reinicia a nadie que ya vaya a media secuencia.
     </div>
     <input type="file" accept=".csv,text/csv" onChange={e=>elegirArchivo(e.target.files[0])} style={{fontSize:14,marginBottom:12}}/>
     {error&&<div style={{color:"#dc2626",fontSize:13,marginBottom:10}}>{error}</div>}
     {filas&&<div style={{marginBottom:10}}>
-      <div style={{fontSize:13,marginBottom:10}}>Se van a importar <b>{filas.length}</b> escuelas.</div>
+      <div style={{fontSize:13,marginBottom:10}}>Se van a importar <b>{filas.length}</b> {cfg.etiqueta.toLowerCase()}.</div>
       <Boton onClick={importar} disabled={importando}>{importando?"Importando...":"Confirmar importación"}</Boton>
     </div>}
     {resultado&&<div style={{color:"#16a34a",fontSize:13}}>
@@ -226,7 +230,7 @@ function ImportarProspectos({onListo}){
   </div>;
 }
 
-function AjustesProspeccion({ajustes,onGuardado}){
+function AjustesProspeccion({segmento,ajustes,onGuardado}){
   const[f,setF]=useState(ajustes);
   const[guardando,setGuardando]=useState(false);
   const[msg,setMsg]=useState("");
@@ -237,7 +241,7 @@ function AjustesProspeccion({ajustes,onGuardado}){
     const nuevo={...f,...cambios};
     setF(nuevo);setGuardando(true);setError("");setMsg("");
     const{error}=await sb.rpc("admin_guardar_ajustes_prospeccion",{
-      p_segmento:SEGMENTO,
+      p_segmento:segmento,
       p_activa:nuevo.activa,
       p_envios_por_dia:Number(nuevo.envios_por_dia),
       p_corridas_por_dia:Number(nuevo.corridas_por_dia),
@@ -303,13 +307,13 @@ function AjustesProspeccion({ajustes,onGuardado}){
   </div>;
 }
 
-function PlantillasProspeccion(){
+function PlantillasProspeccion({segmento}){
   const[filas,setFilas]=useState(null);
   const[error,setError]=useState("");
   const[msg,setMsg]=useState("");
 
   const cargar=async()=>{
-    const{data,error}=await sb.rpc("admin_plantillas_prospeccion",{p_segmento:SEGMENTO});
+    const{data,error}=await sb.rpc("admin_plantillas_prospeccion",{p_segmento:segmento});
     if(error){setError(error.message);return;}
     setFilas(data||[]);
   };
@@ -317,7 +321,7 @@ function PlantillasProspeccion(){
 
   const guardar=async(p)=>{
     setError("");setMsg("");
-    const{error}=await sb.rpc("admin_guardar_plantilla",{p_ruta:p.ruta,p_etapa:p.etapa,p_asunto:p.asunto,p_cuerpo_html:p.cuerpo_html,p_segmento:SEGMENTO});
+    const{error}=await sb.rpc("admin_guardar_plantilla",{p_ruta:p.ruta,p_etapa:p.etapa,p_asunto:p.asunto,p_cuerpo_html:p.cuerpo_html,p_segmento:segmento});
     if(error){setError(error.message);return;}
     setMsg("Plantilla guardada.");setTimeout(()=>setMsg(""),2500);
   };
@@ -326,7 +330,7 @@ function PlantillasProspeccion(){
   return <div>
     <div style={{fontSize:13,color:"#6B7280",marginBottom:16,lineHeight:1.55}}>
       Se escribe en HTML simple: <code>&lt;p&gt;</code> para cada párrafo y <code>&lt;a href="..."&gt;</code> para las ligas.
-      Donde escribas <code>{"{NOMBRE}"}</code> se sustituye el nombre real de la escuela. El pie legal se agrega
+      Donde escribas <code>{"{NOMBRE}"}</code> se sustituye el nombre real. El pie legal se agrega
       solo al final de los tres, no hay que ponerlo aquí.
     </div>
     {error&&<div style={{color:"#dc2626",fontSize:13,marginBottom:10}}>{error}</div>}
@@ -346,7 +350,8 @@ function PlantillasProspeccion(){
 const COLOR_ESTATUS_PROSPECTO={activo:"#1f4a80",respondio:"#16a34a",baja:"#6b7280",rebotado:"#dc2626",queja:"#dc2626",completado:"#8593AA"};
 const ETIQUETA_ESTATUS_PROSPECTO={activo:"En secuencia",respondio:"Respondió",baja:"Baja",rebotado:"Rebotó",queja:"Marcó spam",completado:"Secuencia completa"};
 
-function Prospectos(){
+function Prospectos({segmento}){
+  const cfg=SEGMENTOS_ADMIN[segmento];
   const[resumen,setResumen]=useState(null);
   const[lista,setLista]=useState(null);
   const[filtro,setFiltro]=useState({e:"",v:""});
@@ -358,10 +363,10 @@ function Prospectos(){
   const refLista=useRef(null);
 
   const cargar=async()=>{
-    const args={p_estatus:filtro.e||null,p_ruta:null,p_busqueda:busqueda||null,p_limite:300,p_segmento:SEGMENTO};
+    const args={p_estatus:filtro.e||null,p_ruta:null,p_busqueda:busqueda||null,p_limite:300,p_segmento:segmento};
     if(filtro.v) args.p_vista=filtro.v;
     const[r1,r2]=await Promise.all([
-      sb.rpc("admin_prospeccion_resumen",{p_segmento:SEGMENTO}),
+      sb.rpc("admin_prospeccion_resumen",{p_segmento:segmento}),
       sb.rpc("admin_prospectos",args)
     ]);
     if(r1.error){setError(r1.error.message);return;}
@@ -388,8 +393,8 @@ function Prospectos(){
     const{data,error}=await sb.rpc("admin_disparar_lote");
     setDisparando(false);
     if(error){setError(error.message);return;}
-    const propio=(data.detalle||[]).find(d=>d.segmento===SEGMENTO);
-    setAvisoLote(propio?`Se mandaron ${propio.enviados} correos de escuelas.`:(data.motivo?`No se mandó nada: ${data.motivo}.`:"No había nada que mandar para este segmento en este momento."));
+    const propio=(data.detalle||[]).find(d=>d.segmento===segmento);
+    setAvisoLote(propio?`Se mandaron ${propio.enviados} correos de ${cfg.etiqueta.toLowerCase()}.`:(data.motivo?`No se mandó nada: ${data.motivo}.`:"No había nada que mandar para este segmento en este momento."));
     cargar();
   };
 
@@ -399,15 +404,22 @@ function Prospectos(){
   const enviados=resumen.correos_enviados||0;
   const pct=(n)=>enviados?Math.round((n/enviados)*100)+"%":"—";
 
+  const etiquetaExtra=p=>{
+    const v=p[cfg.campoExtra];
+    return v?` · ${cfg.etiquetasExtra[v]||v}`:"";
+  };
+  const desgloseExtra=(resumen[cfg.campoExtra==="nivel_educativo"?"por_nivel":"por_categoria"]||[])
+    .map(f=>({...f,nivel:cfg.etiquetasExtra[f.nivel||f.categoria]||f.nivel||f.categoria}));
+
   return <div>
     <div style={{display:"flex",gap:16,marginBottom:20,borderBottom:"1px solid #DDE4EE"}}>
       <button onClick={()=>setSubvista("panel")} style={tabStyle(subvista==="panel")}>Campaña</button>
       <button onClick={()=>setSubvista("plantillas")} style={tabStyle(subvista==="plantillas")}>Los 3 correos</button>
     </div>
 
-    {subvista==="plantillas"?<PlantillasProspeccion/>:<div>
+    {subvista==="plantillas"?<PlantillasProspeccion segmento={segmento}/>:<div>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
-        <TarjetaCifra valor={resumen.total} etiqueta="Escuelas en la lista"
+        <TarjetaCifra valor={resumen.total} etiqueta={`${cfg.etiqueta} en la lista`}
           onClick={()=>verFiltro("","")} activa={activa("","")}/>
         <TarjetaCifra valor={resumen.sin_contactar} etiqueta="Sin contactar"
           onClick={()=>verFiltro("","sin_contactar")} activa={activa("","sin_contactar")}/>
@@ -419,8 +431,8 @@ function Prospectos(){
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
         <TarjetaCifra valor={enviados} etiqueta={`Correos enviados · ${resumen.enviados_hoy} hoy`}
           onClick={()=>verFiltro("","contactados")} activa={activa("","contactados")}/>
-        <TarjetaCifra valor={pct(resumen.abrieron)} etiqueta={`Abrieron (${resumen.abrieron} escuelas)`} color="#1f4a80"/>
-        <TarjetaCifra valor={pct(resumen.clicaron)} etiqueta={`Vieron el sitio demo (${resumen.clicaron} escuelas)`} color="#F59E0B"/>
+        <TarjetaCifra valor={pct(resumen.abrieron)} etiqueta={`Abrieron (${resumen.abrieron})`} color="#1f4a80"/>
+        <TarjetaCifra valor={pct(resumen.clicaron)} etiqueta={`Vieron el sitio demo (${resumen.clicaron})`} color="#F59E0B"/>
         <TarjetaCifra valor={resumen.rebotados+resumen.quejas} etiqueta="Rebotes y quejas de spam"
           color={(resumen.rebotados+resumen.quejas)>0?"#dc2626":"#8593AA"}
           onClick={()=>verFiltro("","problema")} activa={activa("","problema")}/>
@@ -428,11 +440,11 @@ function Prospectos(){
 
       <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
         <div style={{flex:"1 1 260px"}}><ListaBarras titulo="Por estado" filas={resumen.por_estado}/></div>
-        <div style={{flex:"1 1 260px"}}><ListaBarras titulo="Por nivel educativo" filas={(resumen.por_nivel||[]).map(f=>({...f,nivel:NIVELES_EDUCATIVOS[f.nivel]||f.nivel}))}/></div>
+        <div style={{flex:"1 1 260px"}}><ListaBarras titulo={cfg.tituloDesglose} filas={desgloseExtra}/></div>
       </div>
 
-      <AjustesProspeccion ajustes={resumen.ajustes} onGuardado={cargar}/>
-      <ImportarProspectos onListo={cargar}/>
+      <AjustesProspeccion segmento={segmento} ajustes={resumen.ajustes} onGuardado={cargar}/>
+      <ImportarProspectos segmento={segmento} onListo={cargar}/>
 
       <div style={{...est.card,marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
         <div style={{fontSize:13,color:"#6B7280",flex:"1 1 220px"}}>
@@ -448,11 +460,11 @@ function Prospectos(){
           .map(([v,t])=><button key={v} onClick={()=>setFiltro({e:v,v:""})}
             style={{...est.linkBtn,fontWeight:activa(v,"")?700:400,color:activa(v,"")?"#10284A":"#53647D"}}>{t}</button>)}
       </div>
-      <input placeholder="Buscar por escuela, correo o estado" value={busqueda}
+      <input placeholder={`Buscar por ${cfg.etiquetaSingular}, correo o estado`} value={busqueda}
         onChange={e=>setBusqueda(e.target.value)} style={est.input}/>
 
       {lista&&lista.length===0&&<div style={{...est.card,textAlign:"center",color:"#6B7280"}}>
-        No hay escuelas con ese filtro. Importa el CSV para empezar.
+        No hay {cfg.etiqueta.toLowerCase()} con ese filtro. Importa el CSV para empezar.
       </div>}
       {lista&&lista.length>0&&<div style={{...est.card,padding:0,overflow:"hidden"}}>
         {lista.map(p=><div key={p.id} style={{...est.fila,alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
@@ -462,7 +474,7 @@ function Prospectos(){
             <div style={{marginTop:6,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
               <span style={est.badge(COLOR_ESTATUS_PROSPECTO[p.estatus]||"#8593AA")}>{ETIQUETA_ESTATUS_PROSPECTO[p.estatus]||p.estatus}</span>
               <span style={{fontSize:11.5,color:"#8FA0B4"}}>
-                correo {p.etapa} de 3{p.estado?` · ${p.estado}`:""}{p.nivel_educativo?` · ${NIVELES_EDUCATIVOS[p.nivel_educativo]||p.nivel_educativo}`:""}
+                correo {p.etapa} de 3{p.estado?` · ${p.estado}`:""}{etiquetaExtra(p)}
               </span>
               {p.tiene_sitio_web===false&&<span style={{fontSize:11.5,color:"#B45309",fontWeight:600}}>sin sitio web</span>}
               {p.aperturas>0&&<span style={{fontSize:11.5,color:"#1f4a80",fontWeight:600}}>abrió</span>}
@@ -484,6 +496,7 @@ function Prospectos(){
 
 function PanelAdmin({session,onSalir}){
   const[noAutorizado,setNoAutorizado]=useState(false);
+  const[segmento,setSegmento]=useState("escuelas");
   useEffect(()=>{
     sb.rpc("es_admin").then(({data,error})=>{
       if(error||!data)setNoAutorizado(true);
@@ -500,8 +513,19 @@ function PanelAdmin({session,onSalir}){
       <div style={{fontSize:16,fontWeight:700,color:"#10284A"}}>Hola, fundador</div>
       <button onClick={onSalir} style={{background:"none",border:"none",color:"#6B7280",fontSize:14,cursor:"pointer"}}>Salir ({session.user.email})</button>
     </div>
-    <div style={{fontSize:13,color:"#8FA0B4",marginBottom:24}}>Prospección · segmento escuelas</div>
-    <Prospectos/>
+    <div style={{display:"flex",gap:8,marginBottom:24}}>
+      {Object.entries(SEGMENTOS_ADMIN).map(([clave,c])=>
+        <button key={clave} onClick={()=>setSegmento(clave)}
+          style={{fontSize:13,fontWeight:segmento===clave?700:500,padding:"7px 14px",borderRadius:20,cursor:"pointer",
+            border:"1.5px solid "+(segmento===clave?"#10284A":"#DDE4EE"),
+            background:segmento===clave?"#10284A":"#fff",color:segmento===clave?"#fff":"#53647D"}}>
+          {c.etiqueta}
+        </button>)}
+    </div>
+    {/* key=segmento fuerza remount completo al cambiar de pestaña — así cada subcomponente
+        (plantillas, ajustes, importador) vuelve a cargar sus propios datos sin tener que
+        acordarse de meter `segmento` en cada arreglo de dependencias de useEffect. */}
+    <Prospectos key={segmento} segmento={segmento}/>
   </div>;
 }
 

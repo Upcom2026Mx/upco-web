@@ -23,4 +23,33 @@ const NIVELES_EDUCATIVOS={
   otro:"Otro"
 };
 
+const CATEGORIAS_ACADEMIAS={
+  deporte:"Deporte",
+  arte:"Arte",
+  idiomas:"Idiomas",
+  oficios:"Oficios"
+};
+
+// Un solo lugar para las diferencias de copy/columnas entre segmentos — el panel de admin
+// (upco-web/admin) los usa para no repetir "si segmento==='escuelas' ... else ..." por toda
+// la interfaz. Agregar un segmento nuevo es agregar una entrada aquí.
+const SEGMENTOS_ADMIN={
+  escuelas:{
+    etiqueta:"Escuelas",
+    etiquetaSingular:"escuela",
+    campoExtra:"nivel_educativo",
+    etiquetasExtra:NIVELES_EDUCATIVOS,
+    tituloDesglose:"Por nivel educativo",
+    demo:"https://web.upco.app/demos/escuelas/"
+  },
+  academias:{
+    etiqueta:"Academias",
+    etiquetaSingular:"academia",
+    campoExtra:"categoria",
+    etiquetasExtra:CATEGORIAS_ACADEMIAS,
+    tituloDesglose:"Por categoría",
+    demo:"https://web.upco.app/demos/academias/"
+  }
+};
+
 const fecha=d=>d?new Date(d).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"—";
