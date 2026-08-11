@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Revisamos casi 6,000 escuelas mexicanas en datos abiertos del gobierno. 8 de cada 10 no tienen sitio web propio. — Blog Upco WEB</title>
+<meta name="description" content="Cometa, INEGI y un análisis propio del DENUE muestran una brecha real entre dónde ya buscan las familias y dónde están presentes los planteles educativos en México."/>
+<link rel="canonical" href="https://web.upco.app/blog/digitalizacion-educacion-mexico/"/>
+<meta property="og:type" content="article"/>
+<meta property="og:site_name" content="Upco WEB"/>
+<meta property="og:locale" content="es_MX"/>
+<meta property="og:url" content="https://web.upco.app/blog/digitalizacion-educacion-mexico/"/>
+<meta property="og:title" content="Revisamos casi 6,000 escuelas mexicanas en datos abiertos del gobierno. 8 de cada 10 no tienen sitio web propio."/>
+<meta property="og:description" content="Cometa, INEGI y un análisis propio del DENUE muestran una brecha real entre dónde ya buscan las familias y dónde están presentes los planteles."/>
+<meta property="og:image" content="https://web.upco.app/img/aula-clase.jpg"/>
+<meta property="article:published_time" content="2026-08-10T09:00:00-06:00"/>
+<meta property="article:author" content="Equipo Upco WEB"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<link rel="icon" href="../../icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../../estilos.css"/>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Manrope',-apple-system,'Segoe UI',Arial,sans-serif;background:linear-gradient(180deg,#F8FAFC 0%,#EFF3F9 460px);color:#0a1c35}
+  a{text-decoration:none}
+  h1,h2,h3,h4{font-family:'Archivo',sans-serif!important}
+  .header{background:linear-gradient(135deg,#173863,#0a1c35);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 0;max-width:1040px;margin:0 auto;border-radius:0 0 16px 16px;box-shadow:0 4px 20px rgba(10,28,53,.18)}
+  .header>div{display:flex;flex-wrap:wrap;justify-content:flex-end}
+  .brand{color:#fff;font-weight:700;font-size:19px;font-family:'Archivo',sans-serif}
+  .brand span{color:#F59E0B}
+  .navlink{color:#DDE4EE;font-size:14px;font-weight:600;padding:8px 14px;transition:color .15s ease}
+  .navlink:hover{color:#fff}
+  @media(max-width:560px){.navlink{font-size:13px;padding:7px 9px}}
+
+  .volver{max-width:720px;margin:22px auto 0;padding:0 20px}
+  .volver a{font-size:13px;font-weight:700;color:#8FA0B4}
+  .volver a:hover{color:#10284A}
+
+  article{max-width:720px;margin:0 auto;padding:18px 20px 0}
+  .art-eyebrow{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#D89416;margin:0 0 14px}
+  article h1{font-weight:300;font-size:clamp(26px,4.6vw,38px);line-height:1.16;letter-spacing:-.015em;margin:0 0 18px;color:#10284A;text-wrap:balance}
+  .art-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:13px;color:#8FA0B4;margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid rgba(16,40,74,.1)}
+  .art-meta span.punto{width:3px;height:3px;border-radius:50%;background:#C7D0DC}
+
+  .compartir{display:inline-flex;align-items:center;gap:8px;background:#0A66C2;color:#fff!important;font-size:13px;font-weight:700;padding:9px 16px;border-radius:99px;transition:transform .15s ease,background .15s ease}
+  .compartir:hover{background:#084d92;transform:translateY(-1px)}
+  .compartir svg{width:15px;height:15px;fill:#fff}
+  @media(prefers-reduced-motion:reduce){.compartir{transition:none}.compartir:hover{transform:none}}
+
+  .art-foto{width:100%;border-radius:16px;box-shadow:0 12px 34px rgba(16,28,53,.14);margin-bottom:30px;display:block}
+
+  .cuerpo{font-size:16px;line-height:1.75;color:#26374F}
+  .cuerpo p{margin:0 0 20px}
+  .cuerpo h2{font-size:21px;font-weight:700;color:#10284A;margin:38px 0 14px;line-height:1.3}
+  .cuerpo a{color:#10284A;font-weight:700;text-decoration:underline;text-decoration-color:rgba(16,40,74,.3);text-underline-offset:2px}
+  .cuerpo a:hover{text-decoration-color:#10284A}
+  .cuerpo ul{margin:0 0 20px;padding-left:20px}
+  .cuerpo li{margin-bottom:10px}
+  .cuerpo strong{color:#10284A}
+
+  .cifra{background:linear-gradient(160deg,#173863,#0a1c35);border-radius:18px;padding:30px 28px;margin:32px 0;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;box-shadow:0 16px 40px rgba(16,40,74,.2)}
+  .cifra .num{font-family:'Archivo',sans-serif;font-size:44px;font-weight:800;color:#FBBF24;line-height:1}
+  .cifra p{margin:0;color:#DDE4EE;font-size:14px;line-height:1.55}
+  @media(max-width:520px){.cifra{grid-template-columns:1fr;text-align:center}}
+
+  .fuentes{max-width:720px;margin:20px auto 0;padding:26px 20px 0;border-top:1px solid rgba(16,40,74,.1)}
+  .fuentes h3{font-size:11.5px;font-weight:700;color:#10284A;margin:0 0 12px;text-transform:uppercase;letter-spacing:.05em}
+  .fuentes ol{margin:0;padding-left:20px;font-size:13px;color:#6B7280;line-height:1.8}
+  .fuentes a{color:#53647D;font-weight:600;word-break:break-word}
+  .fuentes a:hover{color:#10284A}
+
+  .cta-final{background:linear-gradient(160deg,#173863,#0a1c35);padding:48px 20px;text-align:center;border-radius:24px;max-width:720px;margin:44px auto 40px;box-shadow:0 20px 50px rgba(16,40,74,.2)}
+  .cta-final h2{color:#fff;font-size:22px;font-weight:600;margin:0 0 10px}
+  .cta-final p{color:#DDE4EE;font-size:14px;margin:0 0 22px}
+  .boton{display:inline-block;background:linear-gradient(180deg,#FBBF24,#F59E0B);color:#10284A;border-radius:99px;padding:14px 26px;font-size:14.5px;font-weight:800;box-shadow:0 10px 26px rgba(245,158,11,.32);transition:transform .18s ease}
+  .boton:hover{transform:translateY(-2px)}
+  @media(prefers-reduced-motion:reduce){.boton{transition:none}.boton:hover{transform:none}}
+
+  footer{max-width:1040px;margin:0 auto;padding:24px 20px;text-align:center;font-size:12.5px;color:#8FA0B4}
+  footer a{color:#53647D;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="brand" href="../../"><span class="brand-logo"></span> <span>WEB</span></a>
+  <div>
+    <a class="navlink" href="../../#planes">Planes</a>
+    <a class="navlink" href="../../#como-funciona">Cómo funciona</a>
+    <a class="navlink" href="../../#nosotros">Quiénes somos</a>
+    <a class="navlink" href="../" style="color:#F59E0B;font-weight:800">Blog</a>
+    <a class="navlink" href="mailto:hola@upco.app?subject=Quiero%20un%20sitio%20web" style="background:rgba(255,255,255,.12);border-radius:8px">Escríbenos</a>
+  </div>
+</div>
+
+<div class="volver"><a href="../">← Volver al blog</a></div>
+
+<article>
+  <div class="art-eyebrow">Digitalización</div>
+  <h1>Revisamos casi 6,000 escuelas mexicanas en datos abiertos del gobierno. 8 de cada 10 no tienen sitio web propio.</h1>
+  <div class="art-meta">
+    <span>Equipo Upco WEB</span><span class="punto"></span><span>10 de agosto, 2026</span><span class="punto"></span><span>7 min de lectura</span>
+    <a class="compartir" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fweb.upco.app%2Fblog%2Fdigitalizacion-educacion-mexico%2F">
+      <svg viewBox="0 0 24 24"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.59 0 4.26 2.36 4.26 5.44v6.3zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+      Compartir en LinkedIn
+    </a>
+  </div>
+
+  <img class="art-foto" src="../../img/aula-clase.jpg" alt="Salón de clases vacío, representando la digitalización pendiente de miles de escuelas mexicanas"/>
+
+  <div class="cuerpo">
+    <p>Para armar el segmento educativo de Upco WEB revisamos, uno por uno, los datos abiertos del <a href="https://www.inegi.org.mx/app/mapa/denue/" target="_blank" rel="noopener">Directorio Estadístico Nacional de Unidades Económicas (DENUE) del INEGI</a> en Ciudad de México, Estado de México, Hidalgo y Querétaro — casi 6,000 escuelas particulares reales, desde jardines de niños hasta preparatorias, con correo de contacto verificable. El dato que encontramos: <strong>83.4% no tiene sitio web propio registrado</strong>.</p>
+
+    <p>No es un caso aislado ni un problema exclusivo de escuelas pequeñas. Es, según todo lo que encontramos después, el reflejo de una brecha que ya está costando inscripciones todos los meses — mientras del otro lado, las familias que buscan dónde inscribir a sus hijos ya llegaron a internet hace rato.</p>
+
+    <h2>Las familias ya buscan escuela en internet, no solo por recomendación</h2>
+    <p>Según un <a href="https://addictware.com.mx/ti-en-numeros/estudios/14919-como-son-las-familias-mexicanas-que-buscan-colegio" target="_blank" rel="noopener">análisis del buscador de colegios Micole</a> sobre familias mexicanas que buscan escuela, 8 de cada 10 madres y padres se interesan en que sus hijos entren a un sistema bilingüe, y en <strong>80% de los casos es la madre quien inicia la búsqueda</strong> — la mayoría entre los 30 y 40 años, ya plenamente digital. 65% valora que el plantel tenga actividades extracurriculares como parte de su decisión.</p>
+
+    <p>Es decir: antes de que una familia llame por teléfono o visite el plantel, ya se formó una primera impresión — y esa primera impresión hoy se forma en una pantalla, no en la banqueta de la escuela.</p>
+
+    <div class="cifra">
+      <div class="num">83.4%</div>
+      <p>De las 5,941 escuelas particulares que revisamos en CDMX, Edomex, Hidalgo y Querétaro (datos abiertos DENUE-INEGI) no tiene sitio web propio registrado.</p>
+    </div>
+
+    <h2>La brecha no es de comodidad — es de inscripciones que se van con quien sí tiene sitio</h2>
+    <p>El estudio <a href="https://expansion.mx/tecnologia/2025/06/04/escuelas-privadas-estan-en-jaque-digitalizacion" target="_blank" rel="noopener">"Estado Actual de la Educación Privada en México" de Cometa</a>, reportado por Expansión y retomado por <a href="https://www.anuies.mx/noticias_ies/digitalizar-o-desaparecer-la-educacin-privada-mexicana-est-en-jaque" target="_blank" rel="noopener">ANUIES</a> en junio de 2025, cuantifica exactamente lo que está en juego: los planteles presentes en directorios digitales logran <strong>33% más inscripciones</strong>; tener un sitio web propio se traduce en <strong>29.3% más prospectos registrados</strong>; y las escuelas con redes sociales activas capturan <strong>hasta 3 veces más alumnos</strong> que las que no tienen presencia digital. En conjunto, los planteles que ya adoptaron herramientas digitales de captación reportan hasta <strong>89% más alumnos</strong> que los que siguen dependiendo de procesos manuales.</p>
+
+    <p>Y sin embargo, el mismo estudio encontró que solo 1 de cada 10 escuelas privadas mexicanas ha adoptado siquiera un sistema básico de gestión de prospectos, y que un tercio sigue sin sitio web — un número más bajo que el que encontramos nosotros en el DENUE, probablemente porque ese estudio se enfocó en colegios ya establecidos con más años operando. Entre el universo más amplio de planteles registrados que revisamos, la brecha es todavía mayor.</p>
+
+    <h2>La conectividad ya no es la excusa</h2>
+    <p>Durante años, la respuesta fácil era "no todos tienen internet". Eso ya no sostiene el argumento: según la <a href="https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2025/endutih/ENDUTIH_24.pdf" target="_blank" rel="noopener">Encuesta Nacional sobre Disponibilidad y Uso de TIC (ENDUTIH) del INEGI</a>, México cerró 2024 con <strong>100.2 millones de usuarios de internet</strong> — 83.1% de la población de 6 años o más — y 73.6% de los hogares ya cuenta con conexión. La familia que busca escuela para el próximo ciclo, en la inmensa mayoría de los casos, ya está en línea. La pregunta no es si va a buscar en internet — es qué va a encontrar cuando lo haga.</p>
+
+    <h2>Resolver esto no exige convertirse en una empresa de tecnología</h2>
+    <p>Nada de lo anterior significa que un plantel necesite un sistema completo de gestión escolar desde el primer día. Significa algo mucho más al alcance, y que resuelve la parte que de verdad está costando inscripciones hoy: un sitio con el nombre real de la escuela, sus niveles, su proceso de admisión y una forma clara de contactarla — en vez de depender por completo de una página de Facebook o de que alguien conteste el teléfono a tiempo.</p>
+
+    <p>Es también, visto con calma, el primer paso natural hacia algo más grande. Una vez que un plantel tiene presencia digital ordenada, el siguiente problema que aparece casi siempre es interno: control de inscripciones, comunicación con padres, seguimiento académico — el tipo de gestión escolar digital hacia la que ya se mueve toda la industria, según el propio estudio de Cometa. Ese es el camino que Upco está construyendo como parte de su gama de productos. Pero ese camino empieza aquí: con un sitio real, hoy.</p>
+
+    <p>Le armamos un ejemplo completo para que lo vea funcionando, no descrito: <a href="https://web.upco.app/demos/escuelas/" target="_blank" rel="noopener">así se vería el sitio de su escuela</a>.</p>
+  </div>
+
+  <div class="fuentes">
+    <h3>Fuentes</h3>
+    <ol>
+      <li><a href="https://www.inegi.org.mx/app/mapa/denue/" target="_blank" rel="noopener">INEGI — Directorio Estadístico Nacional de Unidades Económicas (DENUE), análisis propio de Upco WEB (agosto 2026)</a></li>
+      <li><a href="https://expansion.mx/tecnologia/2025/06/04/escuelas-privadas-estan-en-jaque-digitalizacion" target="_blank" rel="noopener">Expansión — "Las escuelas privadas están en jaque por digitalización: 1 de cada 3 no tiene ni página web" (datos Cometa)</a></li>
+      <li><a href="https://www.anuies.mx/noticias_ies/digitalizar-o-desaparecer-la-educacin-privada-mexicana-est-en-jaque" target="_blank" rel="noopener">ANUIES — "Digitalizar o desaparecer, la educación privada mexicana está en jaque"</a></li>
+      <li><a href="https://addictware.com.mx/ti-en-numeros/estudios/14919-como-son-las-familias-mexicanas-que-buscan-colegio" target="_blank" rel="noopener">Addictware / Micole — "Cómo son las familias mexicanas que buscan colegio"</a></li>
+      <li><a href="https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2025/endutih/ENDUTIH_24.pdf" target="_blank" rel="noopener">INEGI — Encuesta Nacional sobre Disponibilidad y Uso de TIC (ENDUTIH) 2024</a></li>
+    </ol>
+  </div>
+
+  <div class="cta-final">
+    <h2>Vea cómo se vería el sitio de su escuela</h2>
+    <p>Un ejemplo completo, con niveles, admisiones y avisos — armado en días con la información real de su plantel.</p>
+    <a class="boton" href="../../demos/escuelas/">Ver el sitio de muestra</a>
+  </div>
+</article>
+
+<footer>
+  © 2026 Upco WEB · <a href="../../terminos/">Aviso de Privacidad</a> · <a href="../../#planes">Planes</a>
+</footer>
+
+</body>
+</html>
