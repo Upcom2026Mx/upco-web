@@ -432,8 +432,10 @@ function Prospectos({segmento}){
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
         <TarjetaCifra valor={enviados} etiqueta={`Correos enviados · ${resumen.enviados_hoy} hoy`}
           onClick={()=>verFiltro("","contactados")} activa={activa("","contactados")}/>
-        <TarjetaCifra valor={pct(resumen.abrieron)} etiqueta={`Abrieron (${resumen.abrieron})`} color="#1f4a80"/>
-        <TarjetaCifra valor={pct(resumen.clicaron)} etiqueta={`Vieron el sitio demo (${resumen.clicaron})`} color="#F59E0B"/>
+        <TarjetaCifra valor={pct(resumen.abrieron)} etiqueta={`Abrieron (${resumen.abrieron})`} color="#1f4a80"
+          onClick={()=>verFiltro("","abrieron")} activa={activa("","abrieron")}/>
+        <TarjetaCifra valor={pct(resumen.clicaron)} etiqueta={`Vieron el sitio demo (${resumen.clicaron})`} color="#F59E0B"
+          onClick={()=>verFiltro("","clicaron")} activa={activa("","clicaron")}/>
         <TarjetaCifra valor={resumen.rebotados+resumen.quejas} etiqueta="Rebotes y quejas de spam"
           color={(resumen.rebotados+resumen.quejas)>0?"#dc2626":"#8593AA"}
           onClick={()=>verFiltro("","problema")} activa={activa("","problema")}/>
