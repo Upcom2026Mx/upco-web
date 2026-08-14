@@ -100,3 +100,45 @@ input:not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{
   .btn{transition:none}
   .btn:hover{transform:none !important}
 }
+
+/* ============ BOTON FLOTANTE DE WHATSAPP ============
+   En Mexico la PYME contacta por WhatsApp, no por correo. El sitio solo tenia enlaces
+   mailto:, que en celular abren una app de correo que mucha gente no tiene configurada —
+   los prospectos llegaban y no encontraban por donde escribir. Va en todas las paginas. */
+.wa-flotante{
+  position:fixed; right:18px; bottom:18px; z-index:900;
+  display:inline-flex; align-items:center; gap:10px;
+  background:#25D366; color:#fff; text-decoration:none;
+  padding:14px 18px; border-radius:100px; font-weight:700; font-size:15px;
+  box-shadow:0 6px 22px rgba(0,0,0,.22);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.wa-flotante:hover{ transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,0,0,.28); color:#fff; }
+.wa-flotante:focus-visible{ outline:3px solid #10284A; outline-offset:3px; }
+.wa-flotante svg{ width:26px; height:26px; flex:0 0 auto; }
+/* En celular solo el icono: una etiqueta ancha tapa el contenido en pantallas chicas. */
+@media (max-width:640px){
+  .wa-flotante{ padding:15px; right:14px; bottom:14px; }
+  .wa-flotante .wa-texto{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){ .wa-flotante{ transition:none; } }
+
+/* ============ MUESTRAS DE TRABAJO ============ */
+.demos{ max-width:1080px; margin:0 auto; padding:56px 20px 8px; }
+.demos-cab{ text-align:center; margin-bottom:28px; }
+.demos-cab h2{ font-size:clamp(24px,3.6vw,34px); margin:0 0 10px; }
+.demos-cab p{ color:#53647D; max-width:60ch; margin:0 auto; }
+.demos-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:18px; }
+.demo-card{
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius-md);
+  overflow:hidden; box-shadow:var(--shadow-md); display:flex; flex-direction:column;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.demo-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+.demo-top{ background:linear-gradient(135deg,#173863,#0a1c35); padding:26px 22px; color:#fff; }
+.demo-top .etiqueta{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#F59E0B; }
+.demo-top h3{ margin:8px 0 0; font-size:20px; color:#fff; }
+.demo-body{ padding:20px 22px 22px; flex:1; display:flex; flex-direction:column; gap:14px; }
+.demo-body p{ margin:0; color:#53647D; font-size:15px; line-height:1.6; }
+.demo-body .btn{ align-self:flex-start; }
+@media (prefers-reduced-motion:reduce){ .demo-card{ transition:none; } }
