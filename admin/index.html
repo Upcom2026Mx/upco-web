@@ -523,19 +523,26 @@ function TopeDominio(){
   };
 
   if(!d)return null;
-  const etiquetas={agencias_seguros:"Agencias de seguros",escuelas:"Escuelas",academias:"Academias"};
+  // Este panel es de Upco WEB: solo muestra y controla sus propios segmentos
+  // (los que vengan de SEGMENTOS_ADMIN, hoy escuelas/academias). Agencias de
+  // seguros es de InsurGest, se administra desde su propio /admin — no debe
+  // listarse ni poderse reactivar desde aquí, aunque compartan el mismo tope
+  // de envío diario.
+  const etiquetas={escuelas:"Escuelas",academias:"Academias"};
+  const propios=Object.keys(SEGMENTOS_ADMIN);
+  const segmentosPropios=(d.segmentos||[]).filter(s=>propios.includes(s.segmento));
   return <div style={{...est.card,marginBottom:20,background:"#FAFCFE"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:12}}>
       <div>
-        <div style={{fontSize:13,fontWeight:700,color:"#10284A"}}>Tope del dominio · compartido entre las 3 campañas</div>
-        <div style={{fontSize:12,color:"#6B7280",marginTop:2}}>{d.enviados_hoy_dominio} de {d.tope_diario} enviados hoy en total</div>
+        <div style={{fontSize:13,fontWeight:700,color:"#10284A"}}>Tope del dominio · compartido con Upco InsurGest</div>
+        <div style={{fontSize:12,color:"#6B7280",marginTop:2}}>{d.enviados_hoy_dominio} de {d.tope_diario} enviados hoy en total (todos los productos)</div>
       </div>
       <input type="number" min="1" max="500" defaultValue={d.tope_diario} key={d.tope_diario}
         onBlur={e=>{if(Number(e.target.value)!==d.tope_diario)guardarTope(e.target.value)}}
         style={{width:80,padding:"6px 8px",borderRadius:8,border:"1px solid #DDE4EE",fontSize:14,textAlign:"center"}}/>
     </div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-      {(d.segmentos||[]).map(s=>
+      {segmentosPropios.map(s=>
         <div key={s.segmento} style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,padding:"5px 10px",borderRadius:20,
           background:s.activa?"#E8F5EC":"#FDECEC",color:s.activa?"#16a34a":"#dc2626"}}>
           <b>{etiquetas[s.segmento]||s.segmento}</b> · {s.activa?"activa":"pausada"}
